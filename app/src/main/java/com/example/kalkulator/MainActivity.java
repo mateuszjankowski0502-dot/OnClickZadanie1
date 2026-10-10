@@ -1,42 +1,119 @@
 package com.example.kalkulator;
 
 import android.os.Bundle;
+import android.view.View;
 import android.widget.Button;
 import android.widget.TextView;
+import android.widget.Toast;
 
 import androidx.appcompat.app.AppCompatActivity;
+
+import java.util.Locale;
 
 public class MainActivity extends AppCompatActivity {
 
     private TextView tvDisplay;
 
+    private double storedValue = 0;
+    private String operation = "";
+    private boolean startNewNumber = true;
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
+
         tvDisplay = findViewById(R.id.tvTitle);
+        View.OnClickListener symbolListener =
+                v -> appendSymbol(((Button) v).getText().toString());
 
-        Button btn1 = findViewById(R.id.btn1);
-        Button btn2 = findViewById(R.id.btn2);
-        Button btn3 = findViewById(R.id.btn3);
-        Button btn4 = findViewById(R.id.btn4);
-        Button btn5 = findViewById(R.id.btn5);
-        Button btn6 = findViewById(R.id.btn6);
-        Button btn7 = findViewById(R.id.btn7);
-        Button btn8 = findViewById(R.id.btn8);
-        Button btn9 = findViewById(R.id.btn9);
-
-        btn1.setOnClickListener(v -> appendSymbol("1"));
-        btn2.setOnClickListener(v -> appendSymbol("2"));
-        btn3.setOnClickListener(v -> appendSymbol("3"));
-        btn4.setOnClickListener(v -> appendSymbol("4"));
-        btn5.setOnClickListener(v -> appendSymbol("5"));
-        btn6.setOnClickListener(v -> appendSymbol("6"));
-        btn7.setOnClickListener(v -> appendSymbol("7"));
-        btn8.setOnClickListener(v -> appendSymbol("8"));
-        btn9.setOnClickListener(v -> appendSymbol("9"));
+        int[] symbolIds = {
+                R.id.btnD,
+                R.id.btn1, R.id.btn2, R.id.btn3,
+                R.id.btn4, R.id.btn5, R.id.btn6,
+                R.id.btn7, R.id.btn8, R.id.btn9,
+                R.id.btnE
+        };
+        for (int id : symbolIds) {
+            findViewById(id).setOnClickListener(symbolListener);
+        }
+        View.OnClickListener operationListener = v -> {
+            if (v.getId() == R.id.btnA) {
+                setOperation("+");
+            } else if (v.getId() == R.id.btnB) {
+                setOperation("-");
+            } else if (v.getId() == R.id.btnC) {
+                setOperation("*");
+            } else {
+                setOperation("/"); // btnCeee
+            }
+        };
+        findViewById(R.id.btnA).setOnClickListener(operationListener);
+        findViewById(R.id.btnB).setOnClickListener(operationListener);
+        findViewById(R.id.btnC).setOnClickListener(operationListener);
+        findViewById(R.id.btnCeee).setOnClickListener(operationListener);
+        findViewById(R.id.btnF).setOnClickListener(v -> calculate());
+        findViewById(R.id.btnConfirm).setOnClickListener(v -> clearAll());
     }
+
     private void appendSymbol(String symbol) {
-        tvDisplay.setText(tvDisplay.getText().toString() + symbol);
+        String current = tvDisplay.getText().toString();
+
+        if (startNewNumber) {
+            tvDisplay.setText(symbol.equals(",") ? "0," : symbol);
+            startNewNumber = false;
+            return;
+        }
+        if (symbol.equals(",") && current.contains(",")) {
+            return;
+        }
+        tvDisplay.setText(current + symbol);
+    }
+    private void setOperation(String newOperation) {
+        storedValue = readDisplay();
+        operation = newOperation;
+        startNewNumber = true;
+    }
+    private void calculate() {
+        if (operation.isEmpty()) return;
+
+        double second = readDisplay();
+
+        if (operation.equals("/") && second == 0) {
+            Toast.makeText(this, R.string.error_divide_zero, Toast.LENGTH_SHORT).show();
+            clearAll();
+            return;
+        }
+        double result;
+        if (operation.equals("+")) result = storedValue + second;
+        else if (operation.equals("-")) result = storedValue - second;
+        else if (operation.equals("*")) result = storedValue * second;
+        else result = storedValue / second;
+
+        showResult(result);
+        operation = "";
+        startNewNumber = true;
+    }
+    private double readDisplay() {
+        String text = tvDisplay.getText().toString().replace(',', '.');
+        try {
+            return Double.parseDouble(text);
+        } catch (NumberFormatException e) {
+            return 0;
+        }
+    }
+    private void showResult(double result) {
+        if (result == Math.rint(result) && Math.abs(result) < 1e15) {
+            tvDisplay.setText(String.valueOf((long) result));
+        } else {
+            String text = String.format(Locale.US, "%.2f", result);
+            tvDisplay.setText(text.replace('.', ','));
+        }
+    }
+    private void clearAll() {
+        tvDisplay.setText("0");
+        storedValue = 0;
+        operation = "";
+        startNewNumber = true;
     }
 }
