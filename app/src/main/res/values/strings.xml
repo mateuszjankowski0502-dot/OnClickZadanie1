@@ -1,0 +1,4 @@
+<resources>
+    <string name="error_divide_zero">Nie dzielimy przez zero</string>
+    <string name="app_name">Kalkulator</string>
+</resources>
